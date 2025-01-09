@@ -3,6 +3,7 @@ import pandas as pd
 import altair as alt
 import plotly.express as px
 import requests
+import numpy as np
 
 ##############################################
 # 1) DATA LOADING AND CACHING
@@ -38,12 +39,28 @@ def preprocess_data(df: pd.DataFrame) -> pd.DataFrame:
 
     df['horario'] = pd.to_datetime(df['horario'], format='%H:%M:%S', errors='coerce')
     df['HORA'] = df['horario'].dt.hour.fillna(-1).astype(int)
-    df['PERIODO_DIA'] = df['HORA'].apply(
-        lambda x: 'MANHÃ' if 5 <= x < 12 else
-                  'TARDE' if 12 <= x < 18 else
-                  'NOITE' if 18 <= x < 24 else
-                  'MADRUGADA' if 0 <= x < 5 else 'DESCONHECIDO'
+    
+    #df['PERIODO_DIA'] = df['HORA'].apply(
+    #    lambda x: 'MANHÃ' if 5 <= x < 12 else
+    #              'TARDE' if 12 <= x < 18 else
+    #              'NOITE' if 18 <= x < 24 else
+    #              'MADRUGADA' if 0 <= x < 5 else 'DESCONHECIDO'
+    #)
+
+    bins = [-1, 4, 11, 17, 23]  # hour boundaries: -1, 4, 11, 17, 23
+    labels = ['MADRUGADA', 'MANHÃ', 'TARDE', 'NOITE']
+
+    df['PERIODO_DIA'] = pd.cut(
+        df['HORA'],
+        bins=bins,
+        labels=labels,
+        include_lowest=True,
+        right=True
     )
+    # Replace any hour values falling outside these bins (like 24 or -1) with 'DESCONHECIDO'
+    df['PERIODO_DIA'] = df['PERIODO_DIA'].cat.add_categories(['DESCONHECIDO'])
+    df.loc[df['HORA'] < 0, 'PERIODO_DIA'] = 'DESCONHECIDO'
+    df.loc[df['HORA'] >= 24, 'PERIODO_DIA'] = 'DESCONHECIDO'
 
     # Convert numeric columns
     for col in ['km', 'latitude', 'longitude']:
@@ -117,7 +134,12 @@ def make_choropleth(input_df: pd.DataFrame, input_column: str, input_color_theme
         feature['properties']['uf'] = uf
 
     # Aggregate by state
-    state_counts = input_df.groupby('uf')[input_column].mean().reset_index()
+    state_counts = (
+    input_df
+    .groupby('uf', observed=True)[input_column]
+    .mean()
+    .reset_index()
+)
     state_counts.columns = ['uf', input_column]
 
     # Plotly choropleth
@@ -176,7 +198,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-alt.themes.enable("dark")
+alt.theme.enable("dark") #"opaque"
 
 # CSS styling
 st.markdown("""
@@ -310,7 +332,7 @@ with col2:
     st.markdown('#### Acidentes com Mortes por Hora do Dia')
     df_mortos_hour = df_mortos_selected.copy()
     if not df_mortos_hour.empty:
-        hour_weather = df_mortos_hour.groupby(['HORA', 'condicao_metereologica']).size().reset_index(name='Contagem')
+        hour_weather = df_mortos_hour.groupby(['HORA', 'condicao_metereologica'], observed=True).size().reset_index(name='Contagem')
         bar_chart = alt.Chart(hour_weather).mark_bar().encode(
             x=alt.X('HORA:O', title='Hora do Dia'),
             y=alt.Y('Contagem:Q', title='Número de Acidentes com Mortes'),
@@ -353,7 +375,7 @@ with col2:
         with subcol2:
             st.markdown('##### Principais Causas relacionadas a Acidentes Fatais')
             cause_fatal = (df_selected
-                           .groupby('causa_acidente')['mortos']
+                           .groupby('causa_acidente', observed=True)['mortos']
                            .mean()
                            .nlargest(5)
                            .reset_index())
@@ -404,7 +426,7 @@ with col2:
         with subcol4:
             st.markdown('##### Principais Tipos relacionados a Acidentes Fatais')
             tipo_fatal = (df_selected
-                          .groupby('tipo_acidente')['mortos']
+                          .groupby('tipo_acidente', observed=True)['mortos']
                           .mean()
                           .nlargest(5)
                           .reset_index())
@@ -443,7 +465,7 @@ with col3:
     # Taxa de Acidentes Fatais por Período do Dia
     st.markdown('#### Taxa de Acidentes Fatais por Período do Dia')
     if not df_selected.empty:
-        period_fatal = df_selected.groupby('PERIODO_DIA')['mortos'].mean().reset_index()
+        period_fatal = df_selected.groupby('PERIODO_DIA', observed=True)['mortos'].mean().reset_index()
         period_fatal.columns = ['Período do Dia', 'Taxa de Mortos']
         period_chart = alt.Chart(period_fatal).mark_bar().encode(
             x=alt.X('Período do Dia:O', title='Período do Dia'),
