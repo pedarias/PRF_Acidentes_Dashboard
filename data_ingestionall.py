@@ -86,6 +86,13 @@ def save_data_to_csv(data, save_path, file_name):
 if __name__ == "__main__":
     # Mapping of years to their corresponding Google Drive file IDs
     year_file_id_mapping = {
+        #2014: "1FpF5wTBsRDkEhLm3z2g8XDiXr9SO9Uk8",
+        #2015: "1DyqR5FFcwGsamSag-fGm13feQt0Y-3Da",
+        #2016: "16qooQl_ySoW61CrtsBbreBVNPYlEkoYm",
+        #2017: "1HPLWt5f_l4RIX3tKjI4tUXyZOev52W0N",
+        #2018: "1cM4IgGMIiR-u4gBIH5IEe3DcvBvUzedi",
+        2019: "1pN3fn2wY34GH6cY-gKfbxRJJBFE0lb_l",
+        2020: "1esu6IiH5TVTxFoedv6DBGDd01Gvi8785",
         2021: "12xH8LX9aN2gObR766YN3cMcuycwyCJDz",
         2022: "1PRQjuV5gOn_nn6UNvaJyVURDIfbSAK4-",
         2023: "1-WO3SfNrwwZ5_l7fRTiwBKRw7mi1-HUq",
@@ -93,7 +100,7 @@ if __name__ == "__main__":
     }
 
     # Directory to extract the files to
-    extract_base_dir = '../data/raw'
+    extract_base_dir = 'data/raw'
 
     # Initialize an empty list to hold DataFrames
     data_frames = []
@@ -138,4 +145,4 @@ if __name__ == "__main__":
     print("\nAll data concatenated successfully.")
 
     # Save the combined data
-    save_data_to_csv(all_data, '../data/raw', 'datatran_all_years.csv')
+    save_data_to_csv(all_data, 'data/raw', 'datatran_all_years.csv')

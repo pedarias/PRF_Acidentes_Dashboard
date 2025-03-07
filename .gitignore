@@ -1,3 +1,6 @@
 datatran_all_years.csv
 prf-ml copy.ipynb
 data/
+.next/
+__pycache__/
+nohup.out

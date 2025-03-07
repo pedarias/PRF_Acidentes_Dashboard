@@ -1,0 +1,58 @@
+services:
+  backend:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    container_name: prf-backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/app/data
+    environment:
+      - ENVIRONMENT=production
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/acidentes
+      - CORS_ORIGINS=http://localhost:3000,http://frontend:3000
+    depends_on:
+      - db
+    networks:
+      - prf-network
+    restart: unless-stopped
+    command: python backend/run.py
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: prf-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1
+    depends_on:
+      - backend
+    networks:
+      - prf-network
+    restart: unless-stopped
+
+  db:
+    image: postgres:15-alpine
+    container_name: prf-db    
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=postgres     
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=acidentes
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - prf-network
+    restart: unless-stopped
+
+networks:
+  prf-network:
+    driver: bridge
+
+volumes:
+  postgres_data:

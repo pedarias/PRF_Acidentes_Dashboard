@@ -1,12 +1,13 @@
 # Painel de Acidentes de Trânsito no Brasil 🚦
 ![PRF - Acidentes de Transito Dashboard](images/dashui.png)
 
-Este projeto é uma aplicação web interativa desenvolvida com [Streamlit](https://streamlit.io/) para visualizar e analisar dados de acidentes de trânsito no Brasil.
+Este projeto é uma aplicação web moderna e interativa para visualizar e analisar dados de acidentes de trânsito ocorridos em rodovias federais brasileiras.
 
 ## Sumário
 
 - [Descrição](#descrição)
 - [Funcionalidades](#funcionalidades)
+- [Arquitetura](#arquitetura)
 - [Pré-requisitos](#pré-requisitos)
 - [Instalação](#instalação)
 - [Como Executar](#como-executar)
@@ -17,72 +18,119 @@ Este projeto é uma aplicação web interativa desenvolvida com [Streamlit](http
 
 ## Descrição
 
-A aplicação permite explorar dados de acidentes de trânsito ocorridos no Brasil, fornecendo visualizações interativas e insights valiosos sobre padrões e tendências.
+A aplicação permite explorar dados de acidentes de trânsito ocorridos nas rodovias federais do Brasil, fornecendo visualizações interativas e insights valiosos sobre padrões e tendências. O objetivo é conscientizar sobre os riscos no trânsito e contribuir para a redução de acidentes através da análise de dados.
 
 ## Funcionalidades
 
-- **Visualização de Dados:** Gráficos interativos que mostram estatísticas de acidentes por ano, tipo, localização e outros fatores relevantes.
-- **Interface Personalizável:** Uso de temas e estilos personalizados para melhorar a experiência do usuário.
-- **Interatividade:** Possibilidade de filtrar e explorar os dados em tempo real.
+- **Dashboard Interativo:** Visão geral dos acidentes com métricas principais e filtros
+- **Mapa de Acidentes:** Visualização geoespacial com mapa de calor e marcadores
+- **Análises Detalhadas:** Gráficos e estatísticas por causa, tipo, hora do dia e condições
+- **Perfil de Risco:** Calculadora de risco baseada em fatores como rodovia, horário e condições
+- **Previsões:** Modelos preditivos para identificar tendências futuras
+- **Recomendações:** Sugestões de segurança personalizadas por perfil
+
+## Arquitetura
+
+O projeto segue uma arquitetura moderna dividida em:
+
+### Backend (Python/FastAPI)
+- API RESTful para acesso aos dados e modelos
+- Processamento de dados com Pandas e NumPy
+- Modelos estatísticos e preditivos
+
+### Frontend (Next.js/React)
+- Interface responsiva e moderna
+- Visualizações interativas com Leaflet e Chart.js
+- Filtros dinâmicos e personalizáveis
 
 ## Pré-requisitos
 
-- Python.
-- Gerenciador de pacotes `pip`.
-- Ambiente virtual (recomendado).
+- Node.js (v16+) para o frontend
+- Python 3.9+ para o backend
+- PostgreSQL (opcional para desenvolvimento local)
+- Gerenciadores de pacotes `pip` e `npm`
 
 ## Instalação
 
 1. **Clone o repositório:**
 
    ```bash
-   git clone https://github.com/seu-usuario/seu-repositorio.git
-   cd seu-repositorio
+   git clone https://github.com/seu-usuario/prf-acidentes-dashboard.git
+   cd prf-acidentes-dashboard
    ```
 
-2. **Crie um ambiente virtual:**
-```bash
-python -m venv venv
-source venv/bin/activate   # No Windows: venv\Scripts\activate
+2. **Configurar e instalar o backend:**
+   ```bash
+   cd backend
+   python -m venv venv
+   source venv/bin/activate  # No Windows: venv\Scripts\activate
+   
+   # Instalação de dependências
+   pip install -r requirements.txt
+   
+   # Baixar e processar dados (opcional se já tiver os dados)
+   python data_ingestionall.py
+   ```
 
-conda create -n myenv -python=3.12
-```
-
-3. **Instale as dependências:**
-``` bash 
-pip install -r requirements.txt
-```
+3. **Configurar e instalar o frontend:**
+   ```bash
+   cd frontend
+   npm install
+   # ou com yarn
+   yarn install
+   ```
 
 ## Como Executar
-Configure a Aplicação:
 
-1. Certifique-se de que os dados necessários (arquivos CSV dos anos 2021 a 2024) estão na pasta adequada e que o caminho dos arquivos está correto no script ``app.py`` (no mesmo diretorio).
-Ao executar arquivo ``data_ingestion.py`` ele faz isso automaticamente (concatena dados de 2021 a 2024). Caso execute o arquivo instale as bibliotecas necessarias como gdown e chartdet.
-
-2. No terminal, inicie o Streamlit:
+### Backend
 ```bash
-streamlit run app.py
+cd backend
+python run.py
+# O servidor estará disponível em http://localhost:8000
 ```
 
-3. Acesse no Navegador:
+### Frontend
+```bash
+cd frontend
+npm run dev
+# ou com yarn
+yarn dev
+# O site estará disponível em http://localhost:3000
+```
 
-Abra o link fornecido no terminal, ``http://localhost:8501``, para visualizar a aplicação.
+### Acesso à API
+A documentação da API estará disponível em:
+- http://localhost:8000/docs (Swagger UI)
+- http://localhost:8000/redoc (ReDoc)
 
 ## Uso
-- Navegue pela interface para visualizar diferentes insights dos dados.
-- Utilize os controles e filtros disponíveis para personalizar as visualizações.
-- Interaja com os gráficos para obter informações detalhadas sobre pontos específicos.
+
+- Explore o dashboard principal para obter uma visão geral dos acidentes
+- Use os filtros para refinar os dados por ano, estado, causa e tipo
+- Interaja com o mapa para visualizar a distribuição geográfica dos acidentes
+- Consulte as análises detalhadas para compreender padrões e tendências
+- Utilize a calculadora de risco para avaliar o perfil de segurança de rotas específicas
+- Examine as previsões para antecipar tendências futuras
 
 ## Tecnologias Utilizadas
 
-- [Streamlit](https://streamlit.io/): Framework para criação de aplicações web em Python.
-- [Pandas](https://pandas.pydata.org/): Biblioteca para manipulação e análise de dados.
-- [Altair](https://altair-viz.github.io/): Biblioteca declarativa para criação de visualizações estatísticas.
-- [Plotly](https://plotly.com/): Biblioteca para criação de gráficos interativos.
-- [Requests](https://pypi.org/project/requests/): Biblioteca para realizar requisições HTTP em Python.
+### Backend
+- [FastAPI](https://fastapi.tiangolo.com/): Framework moderno e rápido para APIs
+- [Pandas](https://pandas.pydata.org/): Manipulação e análise de dados
+- [NumPy](https://numpy.org/): Computação numérica
+- [scikit-learn](https://scikit-learn.org/): Modelos de machine learning
+- [SQLAlchemy](https://www.sqlalchemy.org/): ORM para banco de dados
+
+### Frontend
+- [Next.js](https://nextjs.org/): Framework React para aplicações web
+- [React](https://reactjs.org/): Biblioteca para interfaces de usuário
+- [Material UI](https://mui.com/): Componentes React de design
+- [Leaflet](https://leafletjs.com/): Mapas interativos
+- [Chart.js](https://www.chartjs.org/): Gráficos dinâmicos
+- [TailwindCSS](https://tailwindcss.com/): Estilização utilitária
 
 ## Contribuição
-Contribuições são bem-vindas! 
+Contribuições são bem-vindas! Por favor, sinta-se à vontade para enviar um Pull Request.
 
 ## Contato
 
