@@ -1,6 +1,15 @@
-datatran_all_years.csv
-prf-ml copy.ipynb
-data/
-.next/
+# Virtual environment
+venv/
+
+# Node modules
+node_modules/
+frontend/node_modules/
+
+# Python cache
 __pycache__/
-nohup.out
+*.py[cod]
+*$py.class
+
+# Build output
+.next/
+
