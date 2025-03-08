@@ -1,6 +1,6 @@
 import pandas as pd
 import os
-from app.core.config import settings
+from backend.app.core.config import settings
 import asyncio
 from datetime import datetime
 

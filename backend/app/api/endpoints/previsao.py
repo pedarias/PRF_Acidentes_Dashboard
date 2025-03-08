@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Query, Body
 from typing import List, Optional, Dict, Any
-from app.services.previsao_service import PrevisaoService
-from app.models.previsao import PrevisaoRisco, CalculadoraRiscoInput, PrevisaoTendencia
+from backend.app.services.previsao_service import PrevisaoService
+from backend.app.models.previsao import PrevisaoRisco, CalculadoraRiscoInput, PrevisaoTendencia
 
 router = APIRouter()
 previsao_service = PrevisaoService()

@@ -12,11 +12,10 @@ class Settings(BaseSettings):
     API_V1_STR: str = "/api/v1"
     
     # Configurações de CORS
-    CORS_ORIGINS: List[str] = [
-        "http://localhost:3000",  # Frontend Next.js
-        "http://localhost:8501",  # Streamlit (para desenvolvimento)
-        "http://localhost:8000",  # Backend FastAPI
-    ]
+    @property
+    def CORS_ORIGINS(self) -> List[str]:
+        origins = os.getenv("CORS_ORIGINS", "http://localhost:3000,http://frontend:3000")
+        return origins.split(",")
     
     # Configurações de banco de dados
     DATABASE_URL: str = os.getenv("DATABASE_URL", "postgresql://user:password@localhost:5432/acidentes")

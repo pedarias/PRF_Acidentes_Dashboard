@@ -1,8 +1,12 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from app.api.routes import api_router
-from app.core.config import settings
+# Fix import paths for local running
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+from backend.app.api.routes import api_router
+from backend.app.core.config import settings
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -26,7 +30,9 @@ app.add_middleware(
 app.include_router(api_router, prefix=settings.API_V1_STR)
 
 # Montar arquivos estáticos (se necessário)
-app.mount("/static", StaticFiles(directory="static"), name="static")
+import os
+static_directory = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "static")
+app.mount("/static", StaticFiles(directory=static_directory), name="static")
 
 @app.get("/")
 async def root():

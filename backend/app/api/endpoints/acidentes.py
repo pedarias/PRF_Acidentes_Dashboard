@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from typing import List, Optional
 from sqlalchemy.orm import Session
-from app.models.acidente import Acidente, AcidenteFilter, AcidenteResponse
-from app.services.acidente_service import AcidenteService
-from app.db.database import get_db
+from backend.app.models.acidente import Acidente, AcidenteFilter, AcidenteResponse
+from backend.app.services.acidente_service import AcidenteService
+from backend.app.db.database import get_db
 
 router = APIRouter()
 

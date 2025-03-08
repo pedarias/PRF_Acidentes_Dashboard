@@ -1,7 +1,9 @@
+import numpy as np
+from decimal import Decimal
 from fastapi import APIRouter, Query
 from typing import List, Optional, Dict, Any
-from app.services.estatistica_service import EstatisticaService
-from app.models.estatistica import (
+from backend.app.services.estatistica_service import EstatisticaService
+from backend.app.models.estatistica import (
     EstatisticaAnual, 
     EstatisticaCausa,
     EstatisticaTipo,
@@ -12,6 +14,24 @@ from app.models.estatistica import (
 router = APIRouter()
 estatistica_service = EstatisticaService()
 
+# Adicione esta função de helper
+def convert_to_serializable(obj):
+    """Converte tipos não serializáveis para tipos nativos do Python."""
+    if isinstance(obj, np.number):
+        return float(obj)
+    elif isinstance(obj, Decimal):
+        return float(obj)
+    elif isinstance(obj, dict):
+        return {k: convert_to_serializable(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [convert_to_serializable(i) for i in obj]
+    elif isinstance(obj, np.ndarray):
+        return convert_to_serializable(obj.tolist())
+    elif hasattr(obj, "__dict__"):
+        return convert_to_serializable(obj.__dict__)
+    else:
+        return obj
+
 @router.get("/resumo", response_model=Dict[str, Any])
 async def obter_resumo_estatisticas(
     ano: Optional[int] = Query(None, description="Ano específico para filtrar"),
@@ -20,7 +40,13 @@ async def obter_resumo_estatisticas(
     """
     Retorna um resumo com as principais estatísticas dos acidentes.
     """
-    return await estatistica_service.get_resumo(ano, uf)
+    # Obter os dados do serviço
+    data = await estatistica_service.get_resumo(ano, uf)
+    
+    # Converter para tipos serializáveis
+    serializable_data = convert_to_serializable(data)
+    
+    return serializable_data
 
 @router.get("/anuais", response_model=List[EstatisticaAnual])
 async def obter_estatisticas_anuais(

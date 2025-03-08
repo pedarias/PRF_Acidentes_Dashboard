@@ -1,14 +1,14 @@
 import pandas as pd
 import numpy as np
 from typing import List, Optional, Dict, Any
-from app.models.estatistica import (
+from backend.app.models.estatistica import (
     EstatisticaAnual, 
     EstatisticaCausa,
     EstatisticaTipo,
     EstatisticaHora,
     EstatisticaUF
 )
-from app.utils.data_loader import DataLoader
+from backend.app.utils.data_loader import DataLoader
 
 class EstatisticaService:
     def __init__(self):

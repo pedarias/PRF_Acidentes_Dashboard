@@ -2,8 +2,8 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func, and_, or_, desc, distinct
 from typing import List, Optional, Dict, Any
 from datetime import datetime
-from app.db.models import Acidente as AcidenteDB
-from app.models.acidente import Acidente, AcidenteFilter, AcidenteResponse
+from backend.app.db.models import Acidente as AcidenteDB
+from backend.app.models.acidente import Acidente, AcidenteFilter, AcidenteResponse
 
 class AcidenteService:
     @staticmethod

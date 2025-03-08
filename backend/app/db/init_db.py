@@ -4,10 +4,12 @@ import logging
 from datetime import datetime
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
-from app.db.database import Base, engine
-from app.db.models import Acidente, TrechoPerigoso
-from app.core.config import settings
+import sys
 import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))
+from backend.app.db.database import Base, engine
+from backend.app.db.models import Acidente, TrechoPerigoso
+from backend.app.core.config import settings
 import json
 
 # Configurar logging
@@ -330,19 +332,22 @@ def gerar_trechos_perigosos(db: Session, ano: int = None):
 
 def init_db():
     """Inicializa o banco de dados e carrega os dados iniciais."""
-    from app.db.database import SessionLocal
+    from backend.app.db.database import SessionLocal
     
     db = SessionLocal()
     try:
         # Criar tabelas
         create_tables()
         
-        # Carregar dados do CSV
+        # Carregar dados do CSV (caso exista)
         csv_path = os.path.join(settings.DATA_DIR, 'datatran_all_years.csv')
-        populate_db_from_csv(db, csv_path)
-        
-        # Gerar trechos perigosos
-        gerar_trechos_perigosos(db)
+        if os.path.exists(csv_path):
+            populate_db_from_csv(db, csv_path)
+            
+            # Gerar trechos perigosos
+            gerar_trechos_perigosos(db)
+        else:
+            logger.warning(f"Arquivo CSV não encontrado em {csv_path}. Pulando importação de dados.")
         
         logger.info("Inicialização do banco de dados concluída com sucesso!")
     

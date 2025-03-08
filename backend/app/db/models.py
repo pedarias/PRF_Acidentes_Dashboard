@@ -1,6 +1,6 @@
 from sqlalchemy import Column, Integer, String, Float, Date, Time, Boolean, ForeignKey, JSON
 from sqlalchemy.orm import relationship
-from app.db.database import Base
+from backend.app.db.database import Base
 from datetime import date, time
 
 class Acidente(Base):

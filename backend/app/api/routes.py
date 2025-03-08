@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from app.api.endpoints import acidentes, estatisticas, mapas, previsao
+from backend.app.api.endpoints import acidentes, estatisticas, mapas, previsao
 
 api_router = APIRouter()
 

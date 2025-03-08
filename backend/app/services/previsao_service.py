@@ -2,8 +2,8 @@ import pandas as pd
 import numpy as np
 from datetime import date, datetime, timedelta
 from typing import List, Optional, Dict, Any
-from app.models.previsao import PrevisaoRisco, CalculadoraRiscoInput, PrevisaoTendencia, FatorRisco
-from app.utils.data_loader import DataLoader
+from backend.app.models.previsao import PrevisaoRisco, CalculadoraRiscoInput, PrevisaoTendencia, FatorRisco
+from backend.app.utils.data_loader import DataLoader
 from sklearn.linear_model import LinearRegression
 from sklearn.ensemble import RandomForestRegressor
 from scipy import stats

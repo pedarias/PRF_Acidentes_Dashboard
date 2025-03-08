@@ -6,9 +6,9 @@ import os
 from typing import List, Optional, Dict, Any, Tuple
 from sqlalchemy.orm import Session
 from sqlalchemy import func, and_, or_, desc, distinct
-from app.models.ponto_mapa import PontoMapa, ClusterMapa, TrechoPerigoso
-from app.db.models import Acidente as AcidenteDB, TrechoPerigoso as TrechoPerigosoDB
-from app.core.config import settings
+from backend.app.models.ponto_mapa import PontoMapa, ClusterMapa, TrechoPerigoso
+from backend.app.db.models import Acidente as AcidenteDB, TrechoPerigoso as TrechoPerigosoDB
+from backend.app.core.config import settings
 from geopy.distance import geodesic
 from collections import defaultdict
 

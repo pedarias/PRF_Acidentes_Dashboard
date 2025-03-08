@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends, Query
 from typing import List, Optional, Dict, Any
 from sqlalchemy.orm import Session
-from app.services.mapa_service import MapaService
-from app.models.ponto_mapa import PontoMapa, ClusterMapa, TrechoPerigoso
-from app.db.database import get_db
+from backend.app.services.mapa_service import MapaService
+from backend.app.models.ponto_mapa import PontoMapa, ClusterMapa, TrechoPerigoso
+from backend.app.db.database import get_db
 
 router = APIRouter()
 
