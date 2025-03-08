@@ -51,3 +51,5 @@ yarn-error.log*
 *.swo
 .DS_Store
 
+venv/
+frontend/node_modules/
