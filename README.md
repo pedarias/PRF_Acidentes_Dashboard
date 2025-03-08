@@ -1,8 +1,8 @@
 # Painel de Acidentes de Trânsito no Brasil 🚦
 ![PRF - Acidentes de Transito Dashboard](images/dashui.png)
 
-Este projeto é uma aplicação web moderna e interativa para visualizar e analisar dados de acidentes de trânsito ocorridos em rodovias federais brasileiras.
-
+Este projeto é uma 'evolução' do dashboard construído com Streamlit. A ideia foi transformar o dashboard em uma aplicação web moderna e interativa para visualizar e analisar dados de acidentes de trânsito ocorridos em rodovias federais brasileiras.
+![PRF - Acidentes de Transito Dashboard](images/Recording.gif)
 ## Sumário
 
 - [Descrição](#descrição)
