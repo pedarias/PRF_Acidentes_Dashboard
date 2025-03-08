@@ -18,6 +18,7 @@ interface MapPoint {
   causa_acidente: string;
   mortos: number;
   feridos: number;
+  municipio?: string;
   [key: string]: any;
 }
 
@@ -27,15 +28,21 @@ interface MapOverviewProps {
   height?: number;
 }
 
-// Precisamos resolver o problema dos ícones do Leaflet com Next.js
+// Configuração personalizada de ícones para o Leaflet
 // Essa função será chamada depois que o componente for montado no cliente
-const fixLeafletIcons = () => {
+const setupCustomIcons = () => {
   // @ts-ignore - necessário para resolver problema de tipagem do Leaflet com Next.js
   delete L.Icon.Default.prototype._getIconUrl;
+  
+  // Definindo nosso próprio ícone padrão personalizado
   L.Icon.Default.mergeOptions({
-    iconRetinaUrl: '/images/map/marker-icon-2x.png',
-    iconUrl: '/images/map/marker-icon.png',
+    iconUrl: '/images/map/marker-blue.png',
     shadowUrl: '/images/map/marker-shadow.png',
+    iconSize: [38, 41],
+    shadowSize: [41, 41],
+    iconAnchor: [19, 41],
+    shadowAnchor: [13, 41],
+    popupAnchor: [0, -45]
   });
 };
 
@@ -50,8 +57,8 @@ const MapOverview: React.FC<MapOverviewProps> = ({ points = [], isLoading, heigh
     if (!mapContainerRef.current) return;
 
     try {
-      // Tentar resolver o problema dos ícones
-      fixLeafletIcons();
+      // Configurar ícones personalizados
+      setupCustomIcons();
 
       // Inicializar o mapa se ainda não foi feito
       if (!mapRef.current) {
@@ -88,37 +95,17 @@ const MapOverview: React.FC<MapOverviewProps> = ({ points = [], isLoading, heigh
             return [point.latitude, point.longitude, intensity];
           });
 
-        // Criar o mapa de calor
+        // Criar o mapa de calor com configurações melhoradas
         if (mapRef.current && heatData.length > 0) {
           // @ts-ignore - leaflet.heat não tem tipos definidos
           heatLayerRef.current = L.heatLayer(heatData, {
-            radius: 20,
-            blur: 15,
-            maxZoom: 10,
-            gradient: { 0.4: 'blue', 0.65: 'lime', 0.9: 'yellow', 1.0: 'red' }
+            radius: 25,  // Aumentar raio para melhor visualização
+            blur: 20,    // Aumentar blur para transições mais suaves
+            maxZoom: 12, // Permitir mais zoom antes de desativar o heatmap
+            // Cores mais distintas para melhor visualização
+            gradient: { 0.3: '#0000ff', 0.5: '#00ff00', 0.7: '#ffff00', 0.9: '#ff8000', 1.0: '#ff0000' },
+            minOpacity: 0.5  // Garantir que pontos sejam sempre visíveis
           }).addTo(mapRef.current);
-
-          // Adicionar marcadores para pontos com mortes
-          points
-            .filter(point => point.latitude && point.longitude && point.mortos > 0)
-            .forEach(point => {
-              const marker = L.marker([point.latitude, point.longitude])
-                .bindPopup(`
-                  <div>
-                    <b>${point.tipo_acidente}</b><br/>
-                    Data: ${new Date(point.data).toLocaleDateString('pt-BR')}<br/>
-                    Hora: ${point.hora}<br/>
-                    BR-${point.br} km ${point.km}<br/>
-                    <b>Mortos: ${point.mortos}</b><br/>
-                    Feridos: ${point.feridos}<br/>
-                    Causa: ${point.causa_acidente}
-                  </div>
-                `);
-              
-              if (markersLayerRef.current) {
-                markersLayerRef.current.addLayer(marker);
-              }
-            });
 
           // Ajustar o zoom do mapa para mostrar todos os pontos
           if (points.length > 0) {
@@ -213,6 +200,43 @@ const MapOverview: React.FC<MapOverviewProps> = ({ points = [], isLoading, heigh
           width: '100%' 
         }} 
       />
+
+      {/* Legenda do Mapa */}
+      {!isLoading && points.length > 0 && (
+        <Box 
+          sx={{
+            position: 'absolute',
+            bottom: 20,
+            right: 10,
+            backgroundColor: 'rgba(255, 255, 255, 0.8)',
+            padding: 1,
+            borderRadius: 1,
+            boxShadow: '0 0 10px rgba(0,0,0,0.1)',
+            zIndex: 500,
+            minWidth: 150
+          }}
+        >
+          <Typography variant="caption" component="div" sx={{ fontWeight: 'bold', mb: 0.5 }}>
+            Intensidade de acidentes
+          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
+            <Box sx={{ width: 12, height: 12, backgroundColor: '#0000ff', borderRadius: '50%' }} />
+            <Typography variant="caption">Baixa</Typography>
+          </Box>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
+            <Box sx={{ width: 12, height: 12, backgroundColor: '#00ff00', borderRadius: '50%' }} />
+            <Typography variant="caption">Média</Typography>
+          </Box>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
+            <Box sx={{ width: 12, height: 12, backgroundColor: '#ffff00', borderRadius: '50%' }} />
+            <Typography variant="caption">Alta</Typography>
+          </Box>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+            <Box sx={{ width: 12, height: 12, backgroundColor: '#ff0000', borderRadius: '50%' }} />
+            <Typography variant="caption">Muito alta</Typography>
+          </Box>
+        </Box>
+      )}
     </Box>
   );
 };

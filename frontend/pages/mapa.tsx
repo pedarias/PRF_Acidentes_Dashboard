@@ -79,7 +79,7 @@ export default function MapaAcidentes() {
     classificacao: '',
   });
   
-  const [mapMode, setMapMode] = useState<'pontos' | 'heatmap' | 'clusters'>('heatmap');
+  const [mapMode, setMapMode] = useState<'heatmap' | 'clusters'>('heatmap');
   const [showFilters, setShowFilters] = useState(true);
 
   // Query para obter os pontos de acidentes
@@ -151,7 +151,7 @@ export default function MapaAcidentes() {
   // Handler para mudança do modo do mapa
   const handleMapModeChange = (
     event: React.MouseEvent<HTMLElement>,
-    newMode: 'pontos' | 'heatmap' | 'clusters',
+    newMode: 'heatmap' | 'clusters',
   ) => {
     if (newMode !== null) {
       setMapMode(newMode);
@@ -159,6 +159,7 @@ export default function MapaAcidentes() {
   };
 
   // Dados mockados para testes enquanto a API não está pronta
+  // Trechos perigosos utilizados como fallback
   const mockTrechos = [
     {
       uf: 'SP',
@@ -283,10 +284,6 @@ export default function MapaAcidentes() {
             <ToggleButton value="heatmap" aria-label="mapa de calor">
               <HeatMapIcon sx={{ mr: 1 }} />
               Mapa de Calor
-            </ToggleButton>
-            <ToggleButton value="pontos" aria-label="pontos">
-              <MarkerIcon sx={{ mr: 1 }} />
-              Pontos de Acidentes
             </ToggleButton>
             <ToggleButton value="clusters" aria-label="clusters">
               <LayersIcon sx={{ mr: 1 }} />

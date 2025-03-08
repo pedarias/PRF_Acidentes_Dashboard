@@ -39,50 +39,58 @@ const UFsChart: React.FC<UFsChartProps> = ({ data, isLoading, year, height = 400
     return new Intl.NumberFormat('pt-BR').format(value);
   };
   
-  // Customizar o componente Tooltip
-  const CustomTooltip = ({ active, payload, label }: any) => {
-    if (active && payload && payload.length) {
-      const uf = payload[0].payload.uf;
-      const acidentes = payload[0].payload.total_acidentes;
-      const mortos = payload[0].payload.total_mortos;
-      const media = payload[0].payload.media_mortos;
-      const rodovia = payload[0].payload.rodovia_mais_perigosa;
-      const taxa = payload[0].payload.acidentes_por_100k_habitantes;
-      
-      return (
-        <Box
-          sx={{
-            backgroundColor: 'background.paper',
-            p: 2,
-            border: `1px solid ${theme.palette.divider}`,
-            borderRadius: 1,
-            boxShadow: 1,
-          }}
-        >
-          <Typography variant="subtitle2" color="primary" fontWeight="bold">
-            {uf}
-          </Typography>
-          <Typography variant="body2">
-            Acidentes: <b>{formatoNumero(acidentes)}</b>
-          </Typography>
-          <Typography variant="body2">
-            Mortes: <b>{formatoNumero(mortos)}</b>
-          </Typography>
-          <Typography variant="body2">
-            Média de mortes: <b>{media.toFixed(3)}</b> por acidente
-          </Typography>
-          <Typography variant="body2">
-            Rodovia mais perigosa: <b>{rodovia}</b>
-          </Typography>
+  
+  // Modify the CustomTooltip component to handle null values:
+
+const CustomTooltip = ({ active, payload, label }: any) => {
+  if (active && payload && payload.length) {
+    const uf = payload[0].payload.uf;
+    const acidentes = payload[0].payload.total_acidentes;
+    const mortos = payload[0].payload.total_mortos;
+    const media = payload[0].payload.media_mortos || 0;
+    const rodovia = payload[0].payload.rodovia_mais_perigosa || 'Não disponível';
+    const taxa = payload[0].payload.acidentes_por_100k_habitantes;
+    
+    return (
+      <Box
+        sx={{
+          backgroundColor: 'background.paper',
+          p: 2,
+          border: `1px solid ${theme.palette.divider}`,
+          borderRadius: 1,
+          boxShadow: 1,
+        }}
+      >
+        <Typography variant="subtitle2" color="primary" fontWeight="bold">
+          {uf}
+        </Typography>
+        <Typography variant="body2">
+          Acidentes: <b>{formatoNumero(acidentes)}</b>
+        </Typography>
+        <Typography variant="body2">
+          Mortes: <b>{formatoNumero(mortos)}</b>
+        </Typography>
+        <Typography variant="body2">
+          Média de mortes: <b>{media ? media.toFixed(3) : '0.000'}</b> por acidente
+        </Typography>
+        <Typography variant="body2">
+          Rodovia mais perigosa: <b>{rodovia}</b>
+        </Typography>
+        {taxa !== null && taxa !== undefined ? (
           <Typography variant="body2">
             Acidentes por 100k habitantes: <b>{taxa.toFixed(1)}</b>
           </Typography>
-        </Box>
-      );
-    }
-    
-    return null;
-  };
+        ) : (
+          <Typography variant="body2">
+            Acidentes por 100k habitantes: <b>Não disponível</b>
+          </Typography>
+        )}
+      </Box>
+    );
+  }
+  
+  return null;
+};
   
   if (isLoading) {
     return (
@@ -176,7 +184,8 @@ const UFsChart: React.FC<UFsChartProps> = ({ data, isLoading, year, height = 400
           <Box sx={{ height: height/2, width: '100%' }}>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
-                data={[...sortedData].sort((a, b) => b.acidentes_por_100k_habitantes - a.acidentes_por_100k_habitantes)}
+                data={[...sortedData].filter(item => item.acidentes_por_100k_habitantes != null)
+                  .sort((a, b) => b.acidentes_por_100k_habitantes - a.acidentes_por_100k_habitantes)}
                 layout="vertical"
                 margin={{ top: 20, right: 50, left: 50, bottom: 5 }}
               >
@@ -205,7 +214,8 @@ const UFsChart: React.FC<UFsChartProps> = ({ data, isLoading, year, height = 400
                   radius={[0, 4, 4, 0]}
                   barSize={24}
                 >
-                  {[...sortedData].sort((a, b) => b.acidentes_por_100k_habitantes - a.acidentes_por_100k_habitantes).map((entry, index) => (
+                  {[...sortedData].filter(item => item.acidentes_por_100k_habitantes != null)
+  .sort((a, b) => b.acidentes_por_100k_habitantes - a.acidentes_por_100k_habitantes).map((entry, index) => (
                     <Cell 
                       key={`cell-${index}`} 
                       fill={theme.palette.secondary.main}

@@ -19,13 +19,20 @@ interface TrechoMapProps {
   trecho: Trecho;
 }
 
-// Resolver problema dos ícones do Leaflet com Next.js
-const fixLeafletIcons = () => {
+// Configuração personalizada de ícones para o Leaflet com Next.js
+const setupCustomIcons = () => {
+  // Remover as configurações padrão
   delete L.Icon.Default.prototype._getIconUrl;
+  
+  // Definindo nosso próprio ícone padrão personalizado
   L.Icon.Default.mergeOptions({
-    iconRetinaUrl: '/images/map/marker-icon-2x.png',
-    iconUrl: '/images/map/marker-icon.png',
+    iconUrl: '/images/map/marker-blue.png',
     shadowUrl: '/images/map/marker-shadow.png',
+    iconSize: [38, 41],
+    shadowSize: [41, 41],
+    iconAnchor: [19, 41],
+    shadowAnchor: [13, 41],
+    popupAnchor: [0, -45]
   });
 };
 
@@ -54,8 +61,8 @@ const TrechoMap: React.FC<TrechoMapProps> = ({ trecho }) => {
     if (!mapContainerRef.current) return;
 
     try {
-      // Tentar resolver o problema dos ícones
-      fixLeafletIcons();
+      // Configurar ícones personalizados
+      setupCustomIcons();
 
       // Limpar mapa anterior se existir
       if (mapRef.current) {
@@ -77,8 +84,46 @@ const TrechoMap: React.FC<TrechoMapProps> = ({ trecho }) => {
 
       // Verificar se o trecho tem coordenadas válidas
       if (trecho.coordenadas && trecho.coordenadas.length > 0) {
+        // Garantir que as coordenadas estão no formato correto [lat, lng]
+        let coordenadasValidas;
+        try {
+          coordenadasValidas = trecho.coordenadas.map(coord => {
+            // Verificar se a coordenada é um array
+            if (Array.isArray(coord) && coord.length === 2) {
+              return [coord[0], coord[1]];
+            } 
+            // Se for um objeto {lat, lng}
+            else if (coord && typeof coord === 'object' && 'lat' in coord && 'lng' in coord) {
+              return [coord.lat, coord.lng];
+            }
+            // Caso estranho, lançar erro para usar fallback
+            else {
+              throw new Error('Formato de coordenada inválido');
+            }
+          });
+          
+          // Verificar se todas as coordenadas são válidas
+          const todasValidas = coordenadasValidas.every(coord => 
+            typeof coord[0] === 'number' && 
+            typeof coord[1] === 'number' && 
+            !isNaN(coord[0]) && 
+            !isNaN(coord[1])
+          );
+          
+          if (!todasValidas) throw new Error('Coordenadas com valores inválidos');
+          
+        } catch (error) {
+          console.error('Erro ao processar coordenadas:', error);
+          // Fallback: usar coordenadas mockadas para um trecho genérico
+          coordenadasValidas = [
+            [trecho.uf === 'SP' ? -23.5 : -15.8, trecho.uf === 'SP' ? -46.6 : -47.9],
+            [trecho.uf === 'SP' ? -23.6 : -15.9, trecho.uf === 'SP' ? -46.7 : -48.0],
+            [trecho.uf === 'SP' ? -23.7 : -16.0, trecho.uf === 'SP' ? -46.8 : -48.1]
+          ];
+        }
+        
         // Criar polyline para o trecho
-        const polyline = L.polyline(trecho.coordenadas, {
+        const polyline = L.polyline(coordenadasValidas, {
           color: getRiscoColor(trecho.nivel_risco),
           weight: 5,
           opacity: 0.8,
@@ -86,22 +131,31 @@ const TrechoMap: React.FC<TrechoMapProps> = ({ trecho }) => {
         }).addTo(mapRef.current);
 
         // Adicionar marcadores no início e fim do trecho
-        if (trecho.coordenadas.length >= 2) {
-          const startPoint = trecho.coordenadas[0];
-          const endPoint = trecho.coordenadas[trecho.coordenadas.length - 1];
+        if (coordenadasValidas.length >= 2) {
+          const startPoint = coordenadasValidas[0];
+          const endPoint = coordenadasValidas[coordenadasValidas.length - 1];
 
-          const startIcon = new L.Icon({
-            iconUrl: '/images/map/marker-start.png',
-            iconSize: [32, 32],
-            iconAnchor: [16, 32],
-            popupAnchor: [0, -32]
+          // Classe de ícone personalizada para pontos de trecho
+          const TrechoIcon = L.Icon.extend({
+            options: {
+              shadowUrl: '/images/map/marker-shadow.png',
+              iconSize: [38, 41],      // tamanho do ícone
+              shadowSize: [41, 41],    // tamanho da sombra
+              iconAnchor: [19, 41],    // ponto do ícone que corresponderá à localização do marcador
+              shadowAnchor: [13, 41],  // mesmo para a sombra
+              popupAnchor: [0, -45]    // ponto a partir do qual o popup deve abrir
+            }
+          });
+          
+          // Criar ícones específicos para início e fim do trecho
+          const startIcon = new TrechoIcon({
+            iconUrl: '/images/map/marker-green.png',
+            className: 'trecho-inicio-marker'
           });
 
-          const endIcon = new L.Icon({
-            iconUrl: '/images/map/marker-end.png',
-            iconSize: [32, 32],
-            iconAnchor: [16, 32],
-            popupAnchor: [0, -32]
+          const endIcon = new TrechoIcon({
+            iconUrl: '/images/map/marker-orange.png',
+            className: 'trecho-fim-marker'
           });
 
           L.marker(startPoint, { icon: startIcon })
@@ -113,8 +167,10 @@ const TrechoMap: React.FC<TrechoMapProps> = ({ trecho }) => {
             .addTo(mapRef.current);
         }
 
+        // Popup é adicionado abaixo após processar as coordenadas
+
         // Adicionar um popup com informações gerais do trecho
-        const centerPoint = trecho.coordenadas[Math.floor(trecho.coordenadas.length / 2)];
+        const centerPoint = coordenadasValidas[Math.floor(coordenadasValidas.length / 2)];
         L.popup()
           .setLatLng(centerPoint)
           .setContent(`
@@ -125,7 +181,7 @@ const TrechoMap: React.FC<TrechoMapProps> = ({ trecho }) => {
             </div>
           `)
           .openOn(mapRef.current);
-
+          
         // Ajustar o zoom do mapa para mostrar o trecho inteiro
         mapRef.current.fitBounds(polyline.getBounds(), { padding: [50, 50] });
       } else {

@@ -27,32 +27,57 @@ interface MapPoint {
 interface FullScreenMapProps {
   points: MapPoint[];
   isLoading: boolean;
-  mapMode: 'pontos' | 'heatmap' | 'clusters';
+  mapMode: 'heatmap' | 'clusters';
   filter: any;
 }
 
-// Resolver problema dos ícones do Leaflet
-const fixLeafletIcons = () => {
+// Configuração personalizada de ícones para o Leaflet
+const setupCustomIcons = () => {
+  // Remover as configurações padrão
   delete L.Icon.Default.prototype._getIconUrl;
+  
+  // Definindo nosso próprio ícone padrão personalizado
   L.Icon.Default.mergeOptions({
-    iconRetinaUrl: '/images/map/marker-icon-2x.png',
-    iconUrl: '/images/map/marker-icon.png',
+    iconUrl: '/images/map/marker-blue.png',
     shadowUrl: '/images/map/marker-shadow.png',
+    iconSize: [38, 41],
+    shadowSize: [41, 41],
+    iconAnchor: [19, 41],
+    shadowAnchor: [13, 41],
+    popupAnchor: [0, -45]
   });
 };
 
-// Ícones personalizados para diferentes tipos de acidentes
-const createCustomIcon = (mortos: number) => {
-  return new L.Icon({
-    iconUrl: mortos > 0 
-      ? '/images/map/marker-fatal.png' 
-      : '/images/map/marker-normal.png',
-    iconSize: [25, 41],
-    iconAnchor: [12, 41],
-    popupAnchor: [1, -34],
+// Classe de ícone personalizada para acidentes
+const AcidenteIcon = L.Icon.extend({
+  options: {
     shadowUrl: '/images/map/marker-shadow.png',
-    shadowSize: [41, 41]
-  });
+    iconSize: [38, 41],     // tamanho do ícone
+    shadowSize: [41, 41],   // tamanho da sombra
+    iconAnchor: [19, 41],   // ponto do ícone que corresponderá à localização do marcador
+    shadowAnchor: [13, 41], // mesmo para a sombra
+    popupAnchor: [0, -45]   // ponto a partir do qual o popup deve abrir
+  }
+});
+
+// Criação de ícones para diferentes tipos de acidentes
+const createCustomIcon = (mortos: number, feridos: number) => {
+  if (mortos > 0) {
+    return new AcidenteIcon({
+      iconUrl: '/images/map/marker-red.png',
+      className: 'acidente-fatal-marker'
+    });
+  } else if (feridos > 0) {
+    return new AcidenteIcon({
+      iconUrl: '/images/map/marker-orange.png',
+      className: 'acidente-feridos-marker'
+    });
+  } else {
+    return new AcidenteIcon({
+      iconUrl: '/images/map/marker-blue.png',
+      className: 'acidente-simples-marker'
+    });
+  }
 };
 
 const FullScreenMap: React.FC<FullScreenMapProps> = ({ 
@@ -73,8 +98,8 @@ const FullScreenMap: React.FC<FullScreenMapProps> = ({
     if (!mapContainerRef.current) return;
 
     try {
-      // Tentar resolver o problema dos ícones
-      fixLeafletIcons();
+      // Configurar ícones personalizados
+      setupCustomIcons();
 
       // Inicializar o mapa se ainda não foi feito
       if (!mapRef.current) {
@@ -189,41 +214,10 @@ const FullScreenMap: React.FC<FullScreenMapProps> = ({
     }
   };
 
-  // Renderizar pontos individuais
+  // Renderizar pontos individuais - agora simplesmente não renderiza nada
   const renderPoints = (validPoints: MapPoint[]) => {
-    if (!mapRef.current || !markersLayerRef.current) return;
-    
-    validPoints.forEach(point => {
-      const icon = createCustomIcon(point.mortos);
-      
-      const marker = L.marker([point.latitude, point.longitude], { icon })
-        .bindPopup(`
-          <div style="font-family: Arial, sans-serif; max-width: 250px;">
-            <h3 style="margin: 0 0 8px; color: ${point.mortos > 0 ? '#d32f2f' : '#1976d2'}; font-size: 16px;">
-              ${point.tipo_acidente}
-            </h3>
-            <div style="display: grid; grid-template-columns: auto 1fr; gap: 4px 8px; margin-bottom: 8px;">
-              <strong>Data:</strong> <span>${new Date(point.data).toLocaleDateString('pt-BR')}</span>
-              <strong>Hora:</strong> <span>${point.hora}</span>
-              <strong>Local:</strong> <span>BR-${point.br} km ${point.km.toFixed(1)}</span>
-              <strong>Município:</strong> <span>${point.municipio}</span>
-              <strong>UF:</strong> <span>${point.uf}</span>
-            </div>
-            <div style="margin: 8px 0; padding: 8px; background: ${point.mortos > 0 ? '#ffebee' : '#e3f2fd'}; border-radius: 4px;">
-              <div style="display: grid; grid-template-columns: auto 1fr; gap: 4px 8px;">
-                <strong>Mortos:</strong> <span>${point.mortos}</span>
-                <strong>Feridos:</strong> <span>${point.feridos}</span>
-              </div>
-            </div>
-            <div style="margin-top: 8px;">
-              <strong>Causa:</strong> ${point.causa_acidente}<br>
-              <strong>Condição:</strong> ${point.condicao_metereologica}
-            </div>
-          </div>
-        `);
-      
-      markersLayerRef.current.addLayer(marker);
-    });
+    // Função vazia - não renderiza pontos individuais conforme solicitado pelo usuário
+    return;
   };
 
   // Renderizar clusters
@@ -276,14 +270,26 @@ const FullScreenMap: React.FC<FullScreenMapProps> = ({
     });
     
     validPoints.forEach(point => {
-      const icon = createCustomIcon(point.mortos);
+      const icon = createCustomIcon(point.mortos, point.feridos);
+      
+      // Determinar cor do cabeçalho do popup com base no tipo de acidente
+      let headerColor = '#1976d2'; // azul padrão
+      let bgColor = '#e3f2fd';     // fundo azul claro padrão
+      
+      if (point.mortos > 0) {
+        headerColor = '#d32f2f'; // vermelho para fatais
+        bgColor = '#ffebee';     // fundo vermelho claro
+      } else if (point.feridos > 0) {
+        headerColor = '#f57c00'; // laranja para feridos
+        bgColor = '#fff3e0';     // fundo laranja claro
+      }
       
       const marker = L.marker([point.latitude, point.longitude], { 
         icon,
         data: point // Armazenar os dados do ponto para uso no iconCreateFunction
       }).bindPopup(`
         <div style="font-family: Arial, sans-serif; max-width: 250px;">
-          <h3 style="margin: 0 0 8px; color: ${point.mortos > 0 ? '#d32f2f' : '#1976d2'}; font-size: 16px;">
+          <h3 style="margin: 0 0 8px; color: ${headerColor}; font-size: 16px;">
             ${point.tipo_acidente}
           </h3>
           <div style="display: grid; grid-template-columns: auto 1fr; gap: 4px 8px; margin-bottom: 8px;">
@@ -293,7 +299,7 @@ const FullScreenMap: React.FC<FullScreenMapProps> = ({
             <strong>Município:</strong> <span>${point.municipio}</span>
             <strong>UF:</strong> <span>${point.uf}</span>
           </div>
-          <div style="margin: 8px 0; padding: 8px; background: ${point.mortos > 0 ? '#ffebee' : '#e3f2fd'}; border-radius: 4px;">
+          <div style="margin: 8px 0; padding: 8px; background: ${bgColor}; border-radius: 4px;">
             <div style="display: grid; grid-template-columns: auto 1fr; gap: 4px 8px;">
               <strong>Mortos:</strong> <span>${point.mortos}</span>
               <strong>Feridos:</strong> <span>${point.feridos}</span>
