@@ -3,23 +3,22 @@ import { Box, Grid, Typography, Card, CardContent, Paper, Skeleton } from '@mui/
 import { useQuery } from '@tanstack/react-query';
 import dynamic from 'next/dynamic';
 import { Suspense } from 'react';
-import { api } from '@/services/api';
+import { api, getPontosAcidentes } from '@/services/api';
 import StatsOverview from '@/components/dashboard/StatsOverview';
 import FilterPanel from '@/components/common/FilterPanel';
 import TrendChart from '@/components/dashboard/TrendChart';
+import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 // Importação dinâmica para evitar problemas de SSR com Leaflet
-const MapOverview = dynamic(
-  () => import('@/components/dashboard/MapOverview'),
+const FullScreenMap = dynamic(
+  () => import('@/components/mapa/FullScreenMap'),
   { ssr: false, loading: () => <Skeleton variant="rectangular" height={400} /> }
 );
 
 export default function Home() {
   const [filter, setFilter] = useState({
     year: new Date().getFullYear() - 1, // Ano anterior por padrão
-    uf: '',
-    causa: '',
-    tipo: ''
+    uf: ''
   });
 
   // Query para obter o resumo das estatísticas
@@ -38,9 +37,10 @@ export default function Home() {
 
   // Query para obter as estatísticas anuais
   const { data: annualData, isLoading: isAnnualLoading } = useQuery({
-    queryKey: ['estatisticas/anuais', filter.uf],
+    queryKey: ['estatisticas/anuais', filter.year, filter.uf],
     queryFn: async () => {
       const params = new URLSearchParams();
+      if (filter.year) params.append('ano', filter.year.toString());
       if (filter.uf) params.append('uf', filter.uf);
       
       const response = await api.get(`/estatisticas/anuais?${params.toString()}`);
@@ -49,16 +49,15 @@ export default function Home() {
     enabled: true,
   });
 
-  // Query para obter as estatísticas por causa
+  // Query para obter as estatísticas por classificação de acidente
   const { data: causesData, isLoading: isCausesLoading } = useQuery({
-    queryKey: ['estatisticas/por-causas', filter.year, filter.uf],
+    queryKey: ['estatisticas/por-classificacao', filter.year, filter.uf],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (filter.year) params.append('ano', filter.year.toString());
       if (filter.uf) params.append('uf', filter.uf);
-      params.append('top', '5'); // Top 5 causas
       
-      const response = await api.get(`/estatisticas/por-causas?${params.toString()}`);
+      const response = await api.get(`/estatisticas/por-classificacao?${params.toString()}`);
       return response.data;
     },
     enabled: true,
@@ -68,15 +67,22 @@ export default function Home() {
   const { data: mapPoints, isLoading: isMapLoading } = useQuery({
     queryKey: ['mapas/pontos', filter.year, filter.uf],
     queryFn: async () => {
-      const params = new URLSearchParams();
-      if (filter.year) params.append('ano', filter.year.toString());
-      if (filter.uf) params.append('uf', filter.uf);
-      params.append('limit', '1000'); // Limite de pontos para não sobrecarregar
-      
-      const response = await api.get(`/mapas/pontos?${params.toString()}`);
-      return response.data;
+      try {
+        const response = await getPontosAcidentes(
+          filter.year,
+          filter.uf,
+          undefined, // BR não definido
+          undefined, // Tipo não definido
+          1000 // Limite de pontos para não sobrecarregar
+        );
+        return response;
+      } catch (error) {
+        console.error('Erro ao buscar pontos do mapa:', error);
+        return [];
+      }
     },
     enabled: true,
+    staleTime: 5 * 60 * 1000, // 5 minutos
   });
 
   // Função para atualizar os filtros
@@ -115,11 +121,10 @@ export default function Home() {
       { ano: 2023, total_acidentes: 92345, total_mortos: 4567, variacao_percentual: 5.7 }
     ],
     causes: [
-      { causa: "Falta de atenção", total_acidentes: 32456, total_mortos: 1234, media_mortos: 0.038, percentual: 26.3 },
-      { causa: "Velocidade incompatível", total_acidentes: 18765, total_mortos: 987, media_mortos: 0.053, percentual: 15.2 },
-      { causa: "Ingestão de álcool", total_acidentes: 12345, total_mortos: 789, media_mortos: 0.064, percentual: 10.0 },
-      { causa: "Ultrapassagem indevida", total_acidentes: 9876, total_mortos: 654, media_mortos: 0.066, percentual: 8.0 },
-      { causa: "Desobediência à sinalização", total_acidentes: 8765, total_mortos: 543, media_mortos: 0.062, percentual: 7.1 }
+      { classificacao: "SEM VÍTIMA", total_acidentes: 32456, percentual: 45.3 },
+      { classificacao: "COM VÍTIMA FERIDA", total_acidentes: 22765, percentual: 31.8 },
+      { classificacao: "COM VÍTIMA FATAL", total_acidentes: 12345, percentual: 17.2 },
+      { classificacao: "IGNORADO", total_acidentes: 4123, percentual: 5.7 }
     ]
   };
 
@@ -146,73 +151,70 @@ export default function Home() {
           <Card>
             <CardContent>
               <Typography variant="h6" gutterBottom>
-                Mapa de Concentração de Acidentes
+                Clusters de Acidentes
               </Typography>
-              <MapOverview 
-                points={mapPoints || []} 
-                isLoading={isMapLoading}
-                height={400}
-              />
+              <Box sx={{ height: 400, width: '100%', position: 'relative' }}>
+                <FullScreenMap 
+                  points={mapPoints || []} 
+                  isLoading={isMapLoading}
+                  mapMode={'clusters'} 
+                  filter={filter}
+                />
+              </Box>
             </CardContent>
           </Card>
         </Grid>
 
-        {/* Principais Causas de Acidentes */}
+        {/* Classificação de Acidentes */}
         <Grid item xs={12} md={4}>
           <Card>
             <CardContent>
               <Typography variant="h6" gutterBottom>
-                Principais Causas de Acidentes
+                Classificação de Acidentes
               </Typography>
               {isCausesLoading ? (
                 <Box sx={{ pt: 1 }}>
-                  {[...Array(5)].map((_, i) => (
-                    <Skeleton key={i} height={40} sx={{ my: 1 }} />
-                  ))}
+                  <Skeleton height={400} />
                 </Box>
               ) : (
-                <Box sx={{ height: 400, overflow: 'auto' }}>
-                  {/* Renderizar dados de causas aqui */}
-                  {(causesData || mockData.causes).map((cause, index) => (
-                    <Box key={index} sx={{ 
-                      display: 'flex', 
-                      justifyContent: 'space-between',
-                      p: 1,
-                      borderBottom: '1px solid',
-                      borderColor: 'divider',
-                      '&:last-child': { borderBottom: 'none' }
-                    }}>
-                      <Typography variant="body2" sx={{ flex: 2 }}>
-                        {cause.causa}
-                      </Typography>
-                      <Typography variant="body2" sx={{ flex: 1, textAlign: 'right' }}>
-                        {cause.total_acidentes.toLocaleString()}
-                      </Typography>
-                      <Typography 
-                        variant="body2" 
-                        sx={{ 
-                          flex: 1, 
-                          textAlign: 'right',
-                          color: 'error.main',
-                          fontWeight: 'bold'
-                        }}
+                <Box sx={{ height: 400 }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={(causesData || mockData.causes).map(item => ({
+                          name: item.classificacao,
+                          value: item.total_acidentes
+                        }))}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={true}
+                        outerRadius={120}
+                        fill="#8884d8"
+                        dataKey="value"
+                        label={({name, percent}) => `${name}: ${(percent * 100).toFixed(1)}%`}
                       >
-                        {cause.total_mortos.toLocaleString()}
-                      </Typography>
-                    </Box>
-                  ))}
+                        {(causesData || mockData.causes).map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={[
+                            '#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#a05195'
+                          ][index % 5]} />
+                        ))}
+                      </Pie>
+                      <Tooltip formatter={(value) => value.toLocaleString()} />
+                      <Legend />
+                    </PieChart>
+                  </ResponsiveContainer>
                 </Box>
               )}
             </CardContent>
           </Card>
         </Grid>
 
-        {/* Tendência de Acidentes por Ano */}
+        {/* Estatísticas de Acidentes por Ano */}
         <Grid item xs={12}>
           <Card>
             <CardContent>
               <Typography variant="h6" gutterBottom>
-                Tendência de Acidentes por Ano
+                Estatísticas de Acidentes por Ano
               </Typography>
               <TrendChart 
                 data={annualData || mockData.annual} 

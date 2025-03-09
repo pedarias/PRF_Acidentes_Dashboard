@@ -47,59 +47,6 @@ const FilterPanel: React.FC<FilterPanelProps> = ({ onFilterChange, filter }) => 
   // Estado local para evitar múltiplas atualizações
   const [localFilter, setLocalFilter] = useState(filter);
 
-  // Consultas para obter opções de filtro da API
-  const { data: causas } = useQuery({
-    queryKey: ['acidentes/causas'],
-    queryFn: async () => {
-      try {
-        const response = await api.get('/acidentes/causas');
-        return response.data;
-      } catch (error) {
-        console.error('Erro ao buscar causas:', error);
-        return [];
-      }
-    },
-    // Mock de dados enquanto API não está pronta
-    placeholderData: [
-      'Falta de atenção', 
-      'Velocidade incompatível', 
-      'Ingestão de álcool',
-      'Ultrapassagem indevida',
-      'Desobediência à sinalização',
-      'Condutor dormindo',
-      'Defeito mecânico',
-      'Pista escorregadia',
-      'Animais na pista',
-      'Outras'
-    ],
-  });
-
-  const { data: tipos } = useQuery({
-    queryKey: ['acidentes/tipos'],
-    queryFn: async () => {
-      try {
-        const response = await api.get('/acidentes/tipos');
-        return response.data;
-      } catch (error) {
-        console.error('Erro ao buscar tipos:', error);
-        return [];
-      }
-    },
-    // Mock de dados enquanto API não está pronta
-    placeholderData: [
-      'Colisão frontal',
-      'Colisão traseira',
-      'Colisão lateral',
-      'Saída de pista',
-      'Capotamento',
-      'Atropelamento de pessoa',
-      'Atropelamento de animal',
-      'Queda de ocupante',
-      'Incêndio',
-      'Outros'
-    ],
-  });
-
   // Atualiza o estado local quando os filtros externos mudam
   useEffect(() => {
     setLocalFilter(filter);
@@ -116,16 +63,6 @@ const FilterPanel: React.FC<FilterPanelProps> = ({ onFilterChange, filter }) => 
     setLocalFilter(newFilter);
   };
 
-  const handleCausaChange = (event) => {
-    const newFilter = { ...localFilter, causa: event.target.value };
-    setLocalFilter(newFilter);
-  };
-
-  const handleTipoChange = (event) => {
-    const newFilter = { ...localFilter, tipo: event.target.value };
-    setLocalFilter(newFilter);
-  };
-
   // Aplicar filtros
   const handleApplyFilters = () => {
     onFilterChange(localFilter);
@@ -135,13 +72,22 @@ const FilterPanel: React.FC<FilterPanelProps> = ({ onFilterChange, filter }) => 
   const handleClearFilters = () => {
     const defaultFilter = {
       year: CURRENT_YEAR - 1,
-      uf: '',
-      causa: '',
-      tipo: ''
+      uf: ''
     };
     setLocalFilter(defaultFilter);
     onFilterChange(defaultFilter);
   };
+  
+  // Apply filters immediately when they change
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      onFilterChange(localFilter);
+    }, 300); // Small delay to avoid too many requests
+    
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [localFilter, onFilterChange]);
 
   return (
     <Box>
@@ -165,7 +111,7 @@ const FilterPanel: React.FC<FilterPanelProps> = ({ onFilterChange, filter }) => 
           </FormControl>
         </Grid>
 
-        <Grid item xs={12} sm={6} md={3} lg={2}>
+        <Grid item xs={12} sm={6} md={4} lg={4}>
           <FormControl fullWidth variant="outlined" size="small">
             <InputLabel id="uf-select-label">Estado (UF)</InputLabel>
             <Select
@@ -185,47 +131,7 @@ const FilterPanel: React.FC<FilterPanelProps> = ({ onFilterChange, filter }) => 
           </FormControl>
         </Grid>
 
-        <Grid item xs={12} sm={6} md={3} lg={3}>
-          <FormControl fullWidth variant="outlined" size="small">
-            <InputLabel id="causa-select-label">Causa do Acidente</InputLabel>
-            <Select
-              labelId="causa-select-label"
-              id="causa-select"
-              value={localFilter.causa}
-              onChange={handleCausaChange}
-              label="Causa do Acidente"
-            >
-              <MenuItem value="">Todas as causas</MenuItem>
-              {causas && causas.map((causa) => (
-                <MenuItem key={causa} value={causa}>
-                  {causa}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-        </Grid>
-
-        <Grid item xs={12} sm={6} md={3} lg={3}>
-          <FormControl fullWidth variant="outlined" size="small">
-            <InputLabel id="tipo-select-label">Tipo de Acidente</InputLabel>
-            <Select
-              labelId="tipo-select-label"
-              id="tipo-select"
-              value={localFilter.tipo}
-              onChange={handleTipoChange}
-              label="Tipo de Acidente"
-            >
-              <MenuItem value="">Todos os tipos</MenuItem>
-              {tipos && tipos.map((tipo) => (
-                <MenuItem key={tipo} value={tipo}>
-                  {tipo}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-        </Grid>
-
-        <Grid item xs={12} md={2} display="flex" gap={1}>
+        <Grid item xs={12} sm={12} md={4} lg={6} display="flex" gap={1}>
           <Button 
             variant="contained" 
             color="primary" 

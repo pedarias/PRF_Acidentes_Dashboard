@@ -6,7 +6,8 @@ from backend.app.models.estatistica import (
     EstatisticaCausa,
     EstatisticaTipo,
     EstatisticaHora,
-    EstatisticaUF
+    EstatisticaUF,
+    EstatisticaClassificacao
 )
 from backend.app.utils.data_loader import DataLoader
 
@@ -419,3 +420,46 @@ class EstatisticaService:
             "por_dia": dias,
             "por_tipo": tipo_dia
         }
+        
+    async def get_estatisticas_por_classificacao(self, ano: Optional[int] = None, uf: Optional[str] = None, top: int = 10) -> List[EstatisticaClassificacao]:
+        """
+        Retorna estatísticas agrupadas por classificação de acidente.
+        """
+        df = await self._load_data()
+        
+        # Filtrar por ano e UF, se especificados
+        if ano:
+            df = df[df['year'] == ano]
+        if uf:
+            df = df[df['uf'] == uf]
+        
+        # Total de acidentes
+        total_acidentes = len(df)
+        
+        # Agrupar por classificação
+        df_classificacao = df.groupby('classificacao_acidente').agg({
+            'id': 'count',
+            'mortos': ['sum', 'mean']
+        }).reset_index()
+        
+        df_classificacao.columns = ['classificacao', 'total_acidentes', 'total_mortos', 'media_mortos']
+        
+        # Calcular percentuais
+        df_classificacao['percentual'] = (df_classificacao['total_acidentes'] / total_acidentes) * 100
+        
+        # Ordenar e pegar os top N
+        df_classificacao_top = df_classificacao.sort_values('total_acidentes', ascending=False).head(top)
+        
+        # Converter para o modelo
+        result = []
+        for _, row in df_classificacao_top.iterrows():
+            estatistica = EstatisticaClassificacao(
+                classificacao=row['classificacao'],
+                total_acidentes=int(row['total_acidentes']),
+                total_mortos=int(row['total_mortos']),
+                media_mortos=float(row['media_mortos']),
+                percentual=float(row['percentual'])
+            )
+            result.append(estatistica)
+        
+        return result

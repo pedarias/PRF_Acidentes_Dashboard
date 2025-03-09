@@ -59,3 +59,11 @@ class EstatisticaDiaSemana(BaseModel):
     media_mortos: float = Field(..., description="Média de mortos por acidente neste dia")
     percentual: float = Field(..., description="Percentual de acidentes neste dia")
     tipo_dia: str = Field(..., description="Tipo de dia (útil ou fim de semana)")
+    
+class EstatisticaClassificacao(BaseModel):
+    """Modelo para estatísticas por classificação de acidente."""
+    classificacao: str = Field(..., description="Classificação do acidente")
+    total_acidentes: int = Field(..., description="Total de acidentes desta classificação")
+    total_mortos: int = Field(..., description="Total de mortos em acidentes desta classificação")
+    media_mortos: float = Field(..., description="Média de mortos por acidente desta classificação")
+    percentual: float = Field(..., description="Percentual de acidentes desta classificação")

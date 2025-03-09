@@ -58,7 +58,7 @@ function TabPanel(props: TabPanelProps) {
       id={`map-tabpanel-${index}`}
       aria-labelledby={`map-tab-${index}`}
       {...other}
-      style={{ height: index === 0 ? 'calc(100vh - 200px)' : 'auto' }}
+      style={{ height: index === 0 ? 'calc(100vh - 200px)' : 'auto', overflow: 'hidden'}} // Ajuste de altura
     >
       {value === index && (
         <Box sx={{ height: '100%' }}>
@@ -79,7 +79,7 @@ export default function MapaAcidentes() {
     classificacao: '',
   });
   
-  const [mapMode, setMapMode] = useState<'heatmap' | 'clusters'>('heatmap');
+  const [mapMode, setMapMode] = useState<'heatmap'>('heatmap');
   const [showFilters, setShowFilters] = useState(true);
 
   // Query para obter os pontos de acidentes
@@ -149,14 +149,14 @@ export default function MapaAcidentes() {
   };
 
   // Handler para mudança do modo do mapa
-  const handleMapModeChange = (
-    event: React.MouseEvent<HTMLElement>,
-    newMode: 'heatmap' | 'clusters',
-  ) => {
-    if (newMode !== null) {
-      setMapMode(newMode);
-    }
-  };
+  //const handleMapModeChange = (
+  //  event: React.MouseEvent<HTMLElement>,
+  //  newMode: 'heatmap' | 'clusters',
+  //) => {
+  //  if (newMode !== null) {
+  //    setMapMode(newMode);
+  // }
+  //};
 
   // Dados mockados para testes enquanto a API não está pronta
   // Trechos perigosos utilizados como fallback
@@ -274,22 +274,12 @@ export default function MapaAcidentes() {
       
       <TabPanel value={tabValue} index={0}>
         <Box sx={{ mb: 2 }}>
-          <ToggleButtonGroup
-            value={mapMode}
-            exclusive
-            onChange={handleMapModeChange}
-            aria-label="modo de visualização do mapa"
-            size="small"
-          >
-            <ToggleButton value="heatmap" aria-label="mapa de calor">
-              <HeatMapIcon sx={{ mr: 1 }} />
-              Mapa de Calor
-            </ToggleButton>
-            <ToggleButton value="clusters" aria-label="clusters">
-              <LayersIcon sx={{ mr: 1 }} />
-              Clusters
-            </ToggleButton>
-          </ToggleButtonGroup>
+          <Chip
+            icon={<HeatMapIcon />}
+            label="Mapa de Calor"
+            color="primary"
+            variant="outlined"
+            />
         </Box>
         
         <Box sx={{ height: 'calc(100% - 48px)', width: '100%', position: 'relative' }}>

@@ -53,3 +53,5 @@ yarn-error.log*
 
 venv/
 frontend/node_modules/
+
+frontend/public/images/profile.jpg

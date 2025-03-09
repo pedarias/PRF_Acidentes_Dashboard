@@ -51,89 +51,181 @@ const MapOverview: React.FC<MapOverviewProps> = ({ points = [], isLoading, heigh
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const heatLayerRef = useRef<any>(null);
   const markersLayerRef = useRef<L.LayerGroup | null>(null);
+  const initialFitDoneRef = useRef<boolean>(false);
+  const isZooming = useRef<boolean>(false);
   const [mapError, setMapError] = useState<string | null>(null);
+  const [mapReady, setMapReady] = useState<boolean>(false);
 
-  useEffect(() => {
+  // Function to initialize the map
+  const initializeMap = () => {
     if (!mapContainerRef.current) return;
+    if (!document.body.contains(mapContainerRef.current)) return;
 
-    try {
-      // Configurar ícones personalizados
-      setupCustomIcons();
-
-      // Inicializar o mapa se ainda não foi feito
-      if (!mapRef.current) {
-        mapRef.current = L.map(mapContainerRef.current).setView([-15.793889, -47.882778], 5); // Coordenadas de Brasília
-
-        // Adicionar tile layer (fundo do mapa)
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-          attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-          maxZoom: 19,
-        }).addTo(mapRef.current);
-
-        // Criar camada de marcadores
-        markersLayerRef.current = L.layerGroup().addTo(mapRef.current);
-      }
-
-      // Limpar marcadores existentes
-      if (markersLayerRef.current) {
-        markersLayerRef.current.clearLayers();
-      }
-
-      // Limpar heatmap existente
-      if (heatLayerRef.current && mapRef.current) {
-        mapRef.current.removeLayer(heatLayerRef.current);
-      }
-
-      // Apenas adicionar pontos se não estiver carregando e houver pontos
-      if (!isLoading && points.length > 0) {
-        // Preparar dados para heatmap
-        const heatData = points
-          .filter(point => point.latitude && point.longitude)
-          .map(point => {
-            // Intensidade baseada no número de mortos (acidentes com mortes têm maior intensidade)
-            const intensity = 0.5 + (point.mortos > 0 ? point.mortos * 0.5 : 0);
-            return [point.latitude, point.longitude, intensity];
-          });
-
-        // Criar o mapa de calor com configurações melhoradas
-        if (mapRef.current && heatData.length > 0) {
-          // @ts-ignore - leaflet.heat não tem tipos definidos
-          heatLayerRef.current = L.heatLayer(heatData, {
-            radius: 25,  // Aumentar raio para melhor visualização
-            blur: 20,    // Aumentar blur para transições mais suaves
-            maxZoom: 12, // Permitir mais zoom antes de desativar o heatmap
-            // Cores mais distintas para melhor visualização
-            gradient: { 0.3: '#0000ff', 0.5: '#00ff00', 0.7: '#ffff00', 0.9: '#ff8000', 1.0: '#ff0000' },
-            minOpacity: 0.5  // Garantir que pontos sejam sempre visíveis
-          }).addTo(mapRef.current);
-
-          // Ajustar o zoom do mapa para mostrar todos os pontos
-          if (points.length > 0) {
-            try {
-              // Criar um bounds com todos os pontos
-              const bounds = L.latLngBounds(points.map(p => [p.latitude, p.longitude]));
-              if (bounds.isValid()) {
-                mapRef.current.fitBounds(bounds);
-              }
-            } catch (e) {
-              console.error('Erro ao ajustar bounds do mapa:', e);
-            }
-          }
-        }
-      }
-    } catch (error) {
-      console.error('Erro ao inicializar o mapa:', error);
-      setMapError('Erro ao carregar o mapa. Por favor, recarregue a página.');
+    // Clean up any existing map
+    if (mapRef.current) {
+      mapRef.current.remove();
+      mapRef.current = null;
     }
 
-    // Cleanup ao desmontar o componente
+    try {
+      // Force layout calculation to ensure container has size
+      const containerRect = mapContainerRef.current.getBoundingClientRect();
+      if (containerRect.width === 0 || containerRect.height === 0) {
+        console.warn('Map container has no dimensions');
+        return;
+      }
+      
+      // Setup custom icons
+      setupCustomIcons();
+      
+      // Create map with explicit options
+      mapRef.current = L.map(mapContainerRef.current, {
+        center: [-15.793889, -47.882778], // Brasília
+        zoom: 5,
+        zoomControl: true,
+        attributionControl: true,
+        zoomSnap: 0.5,
+        wheelPxPerZoomLevel: 120,
+        scrollWheelZoom: true,
+        wheelDebounceTime: 200
+      });
+
+      // Add tile layer
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+        maxZoom: 19,
+      }).addTo(mapRef.current);
+
+      // Create markers layer
+      markersLayerRef.current = L.layerGroup().addTo(mapRef.current);
+      
+      // Add event listeners to track zooming
+      mapRef.current.on('zoomstart', () => {
+        isZooming.current = true;
+        console.log('Zoom started');
+      });
+      
+      mapRef.current.on('zoomend', () => {
+        console.log('Zoom ended at level:', mapRef.current?.getZoom());
+        // Set a timeout to prevent immediate data refresh during zoom operations
+        setTimeout(() => {
+          isZooming.current = false;
+        }, 300);
+      });
+      
+      // Mark map as ready and invalidate size
+      setTimeout(() => {
+        if (mapRef.current) {
+          mapRef.current.invalidateSize({ animate: true });
+          setMapReady(true);
+        }
+      }, 200);
+    } catch (error) {
+      console.error('Error initializing map:', error);
+      setMapError('Erro ao carregar o mapa. Por favor, recarregue a página.');
+    }
+  };
+
+  // Initialize map on component mount
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      initializeMap();
+    }, 500);
+    
     return () => {
+      clearTimeout(timeoutId);
       if (mapRef.current) {
         mapRef.current.remove();
         mapRef.current = null;
       }
     };
-  }, [points, isLoading]);
+  }, []);
+
+  // Update map data when points or loading state changes, but not on zoom/pan
+  useEffect(() => {
+    if (!mapReady || !mapRef.current || isZooming.current) return;
+
+    try {
+      // Save current view state before clearing layers
+      const currentCenter = mapRef.current.getCenter();
+      const currentZoom = mapRef.current.getZoom();
+      
+      // Clear existing layers
+      if (markersLayerRef.current) {
+        markersLayerRef.current.clearLayers();
+      }
+
+      if (heatLayerRef.current && mapRef.current) {
+        mapRef.current.removeLayer(heatLayerRef.current);
+        heatLayerRef.current = null;
+      }
+
+      // Only add points if not loading and there are points
+      if (!isLoading && points.length > 0) {
+        // Filter valid points first
+        const validPoints = points.filter(point => 
+          point.latitude && point.longitude && 
+          !isNaN(point.latitude) && !isNaN(point.longitude)
+        );
+        
+        if (validPoints.length > 0) {
+          try {
+            // Prepare heatmap data with enhanced intensity for better visualization
+            const heatData = validPoints.map(point => {
+              // Enhanced intensity based on number of deaths and injuries
+              const fatalityFactor = point.mortos > 0 ? point.mortos * 0.8 : 0;
+              const injuryFactor = point.feridos > 0 ? point.feridos * 0.2 : 0;
+              const intensity = 0.3 + fatalityFactor + injuryFactor;
+              return [point.latitude, point.longitude, intensity];
+            });
+
+            // Create heatmap with improved color gradient (red for highest density)
+            // @ts-ignore - leaflet.heat doesn't have type definitions
+            heatLayerRef.current = L.heatLayer(heatData, {
+              radius: 25,
+              blur: 20,
+              gradient: { 
+                0.2: 'blue', 
+                0.4: 'cyan', 
+                0.6: 'lime', 
+                0.7: 'yellow', 
+                0.8: 'orange',
+                1.0: 'red' 
+              },
+              minOpacity: 0.5
+            }).addTo(mapRef.current);
+
+            // Fit map to data points only on initial load
+            if (!initialFitDoneRef.current) {
+              try {
+                const bounds = L.latLngBounds(validPoints.map(p => [p.latitude, p.longitude]));
+                if (bounds.isValid()) {
+                  mapRef.current.fitBounds(bounds, { 
+                    padding: [50, 50],
+                    animate: true,
+                    duration: 0.5
+                  });
+                  initialFitDoneRef.current = true; // Mark as done
+                }
+              } catch (e) {
+                console.error('Error adjusting map bounds:', e);
+              }
+            } else {
+              // Restore previous view position and zoom
+              mapRef.current.setView(currentCenter, currentZoom, { animate: false });
+            }
+            
+            // Force a map update with smooth animation
+            mapRef.current.invalidateSize({ animate: true });
+          } catch (error) {
+            console.error('Error creating heatmap:', error);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error updating map data:', error);
+    }
+  }, [points, isLoading, mapReady]);
 
   if (mapError) {
     return (
@@ -150,7 +242,9 @@ const MapOverview: React.FC<MapOverviewProps> = ({ points = [], isLoading, heigh
         height: height, 
         width: '100%', 
         borderRadius: 1,
-        overflow: 'hidden'
+        overflow: 'hidden',
+        display: 'flex',
+        flexDirection: 'column'
       }}
     >
       {isLoading && (
@@ -197,12 +291,13 @@ const MapOverview: React.FC<MapOverviewProps> = ({ points = [], isLoading, heigh
         ref={mapContainerRef} 
         sx={{ 
           height: '100%', 
-          width: '100%' 
+          width: '100%',
+          visibility: mapReady ? 'visible' : 'hidden'
         }} 
       />
 
-      {/* Legenda do Mapa */}
-      {!isLoading && points.length > 0 && (
+      {/* Map Legend */}
+      {!isLoading && points.length > 0 && mapReady && (
         <Box 
           sx={{
             position: 'absolute',
@@ -221,6 +316,10 @@ const MapOverview: React.FC<MapOverviewProps> = ({ points = [], isLoading, heigh
           </Typography>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
             <Box sx={{ width: 12, height: 12, backgroundColor: '#0000ff', borderRadius: '50%' }} />
+            <Typography variant="caption">Muito baixa</Typography>
+          </Box>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
+            <Box sx={{ width: 12, height: 12, backgroundColor: '#00ffff', borderRadius: '50%' }} />
             <Typography variant="caption">Baixa</Typography>
           </Box>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
@@ -231,9 +330,13 @@ const MapOverview: React.FC<MapOverviewProps> = ({ points = [], isLoading, heigh
             <Box sx={{ width: 12, height: 12, backgroundColor: '#ffff00', borderRadius: '50%' }} />
             <Typography variant="caption">Alta</Typography>
           </Box>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
+            <Box sx={{ width: 12, height: 12, backgroundColor: '#ff8000', borderRadius: '50%' }} />
+            <Typography variant="caption">Muito alta</Typography>
+          </Box>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
             <Box sx={{ width: 12, height: 12, backgroundColor: '#ff0000', borderRadius: '50%' }} />
-            <Typography variant="caption">Muito alta</Typography>
+            <Typography variant="caption">Crítica</Typography>
           </Box>
         </Box>
       )}
