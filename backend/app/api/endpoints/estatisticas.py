@@ -8,7 +8,8 @@ from backend.app.models.estatistica import (
     EstatisticaCausa,
     EstatisticaTipo,
     EstatisticaHora,
-    EstatisticaUF
+    EstatisticaUF,
+    EstatisticaClassificacao
 )
 
 router = APIRouter()
@@ -118,3 +119,14 @@ async def obter_estatisticas_por_dia_semana(
     Retorna estatísticas agrupadas por dia da semana.
     """
     return await estatistica_service.get_estatisticas_por_dia_semana(ano, uf)
+
+@router.get("/por-classificacao", response_model=List[EstatisticaClassificacao])
+async def obter_estatisticas_por_classificacao(
+    ano: Optional[int] = Query(None, description="Ano específico para filtrar"),
+    uf: Optional[str] = Query(None, description="UF específica para filtrar"),
+    top: int = Query(10, description="Número de principais classificações a retornar")
+):
+    """
+    Retorna estatísticas agrupadas por classificação de acidente.
+    """
+    return await estatistica_service.get_estatisticas_por_classificacao(ano, uf, top)

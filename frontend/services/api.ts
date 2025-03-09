@@ -79,8 +79,9 @@ export const getEstatisticasResumo = async (ano?: number, uf?: string) => {
   return response.data;
 };
 
-export const getEstatisticasAnuais = async (uf?: string) => {
+export const getEstatisticasAnuais = async (ano?: number, uf?: string) => {
   const params = new URLSearchParams();
+  if (ano) params.append('ano', ano.toString());
   if (uf) params.append('uf', uf);
   
   const response = await api.get(`/estatisticas/anuais?${params.toString()}`);
@@ -121,6 +122,16 @@ export const getEstatisticasPorUF = async (ano?: number) => {
   if (ano) params.append('ano', ano.toString());
   
   const response = await api.get(`/estatisticas/por-ufs?${params.toString()}`);
+  return response.data;
+};
+
+export const getEstatisticasPorClassificacao = async (ano?: number, uf?: string, top: number = 10) => {
+  const params = new URLSearchParams();
+  if (ano) params.append('ano', ano.toString());
+  if (uf) params.append('uf', uf);
+  params.append('top', top.toString());
+  
+  const response = await api.get(`/estatisticas/por-classificacao?${params.toString()}`);
   return response.data;
 };
 

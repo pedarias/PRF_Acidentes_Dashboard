@@ -61,8 +61,8 @@ export default function Sobre() {
           </Typography>
           
           <Typography variant="body1" paragraph>
-            O <strong>PRF Acidentes Dashboard</strong> é uma plataforma abrangente para análise e visualização 
-            de dados sobre acidentes de trânsito nas rodovias federais brasileiras. Desenvolvido como uma ferramenta 
+            O <strong>PRF Acidentes Dashboard</strong> é uma plataforma de análise e visualização de dados sobre 
+            acidentes nas rodovias federais brasileiras. Desenvolvido como uma ferramenta 
             de código aberto, o projeto busca democratizar o acesso a informações vitais sobre segurança viária.
           </Typography>
           
@@ -86,42 +86,30 @@ export default function Sobre() {
               <List>
                 <ListItem>
                   <ListItemIcon>
-                    <ChartIcon color="primary" />
+                    <ChartIcon fontSize="small" />
                   </ListItemIcon>
-                  <ListItemText 
-                    primary="Promover a transparência dos dados sobre acidentes de trânsito"
-                    secondary="Disponibilizar informações claras e acessíveis para toda a sociedade"
-                  />
+                  <ListItemText primary="Disponibilizar dados sobre acidentes em rodovias federais de forma acessível e interativa" />
                 </ListItem>
                 
                 <ListItem>
                   <ListItemIcon>
-                    <MapIcon color="primary" />
+                    <ChartIcon fontSize="small" />
                   </ListItemIcon>
-                  <ListItemText 
-                    primary="Identificar trechos críticos e pontos de concentração de acidentes"
-                    secondary="Mapear as áreas com maior incidência para direcionar ações preventivas"
-                  />
+                  <ListItemText primary="Identificar pontos críticos e trechos de maior risco nas rodovias brasileiras" />
                 </ListItem>
                 
                 <ListItem>
                   <ListItemIcon>
-                    <SpeedIcon color="primary" />
+                    <ChartIcon fontSize="small" />
                   </ListItemIcon>
-                  <ListItemText 
-                    primary="Oferecer ferramentas de avaliação de risco para usuários das rodovias"
-                    secondary="Permitir que motoristas possam planejar viagens mais seguras com base em dados históricos"
-                  />
+                  <ListItemText primary="Fornecer insights que possam contribuir para políticas públicas de segurança viária" />
                 </ListItem>
                 
                 <ListItem>
                   <ListItemIcon>
-                    <DataIcon color="primary" />
+                    <ChartIcon fontSize="small" />
                   </ListItemIcon>
-                  <ListItemText 
-                    primary="Auxiliar na tomada de decisões baseadas em evidências"
-                    secondary="Fornecer subsídios para políticas públicas e ações de prevenção de acidentes"
-                  />
+                  <ListItemText primary="Facilitar a pesquisa acadêmica e jornalística sobre o tema" />
                 </ListItem>
               </List>
             </CardContent>
@@ -135,35 +123,19 @@ export default function Sobre() {
                 Metodologia
               </Typography>
               
-              <Typography variant="body2" paragraph>
-                Os dados utilizados neste projeto são provenientes do Portal de Dados Abertos da PRF, 
-                que disponibiliza informações detalhadas sobre acidentes ocorridos em rodovias federais brasileiras.
-              </Typography>
-              
-              <Typography variant="body2" paragraph>
-                Nosso processo de tratamento de dados inclui:
-              </Typography>
-              
-              <List dense>
+              <List>
                 <ListItem>
                   <ListItemIcon>
                     <ChartIcon fontSize="small" />
                   </ListItemIcon>
-                  <ListItemText primary="Coleta e consolidação de dados de múltiplos anos" />
+                  <ListItemText primary="Coleta e processamento de dados oficiais da PRF" />
                 </ListItem>
                 
                 <ListItem>
                   <ListItemIcon>
                     <ChartIcon fontSize="small" />
                   </ListItemIcon>
-                  <ListItemText primary="Limpeza e padronização de valores ausentes ou inconsistentes" />
-                </ListItem>
-                
-                <ListItem>
-                  <ListItemIcon>
-                    <ChartIcon fontSize="small" />
-                  </ListItemIcon>
-                  <ListItemText primary="Geocodificação de coordenadas para visualização em mapas" />
+                  <ListItemText primary="Geolocalização e mapeamento de acidentes em todo o território nacional" />
                 </ListItem>
                 
                 <ListItem>
@@ -355,7 +327,7 @@ export default function Sobre() {
                   startIcon={<GitHubIcon />} 
                   size="small"
                   component={MuiLink}
-                  href="https://github.com/seu-usuario"
+                  href="https://github.com/pedarias"
                   target="_blank"
                   rel="noopener noreferrer"
                 >
